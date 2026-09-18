@@ -16,18 +16,25 @@ jobs:
         - uses: actions/setup-node@v6
           with:
             node-version: '24'
+
         - name: Install dependencies
           run: npm install
+
         - name: Check style
           run: npm run eslint
+
         - name: Run npm test
           run: npm test
+
         - name: npm run build
           run: npm run build
+
         - name: Install Playwright Browsers
           run: npx playwright install --with-deps
+
         - name: Run Playwright tests
           run: npm run test:e2e
+          
         - name: Trigger deployment
           if: ${{ github.event_name == 'push' }}
           run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
