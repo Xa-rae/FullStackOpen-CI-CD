@@ -39,6 +39,34 @@ jobs:
           if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
           run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
 
+        - name: Send a message to Discord
+          if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') && success() }}
+          uses: sarisia/actions-status-discord@v1
+          with:
+            webhook: ${{ secrets.DISCORD_WEBHOOK }}
+            nodetail: true
+            notimestamp: true
+            title: 'Deployment Details'
+            description: |
+              Commit: ${{ github.sha }}
+              Message: ${{ github.event.head_commit.message }}
+              Author: ${{ github.event.head_commit.author.name }}
+
+        - name: Send a message to Discord
+          if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') && failure() }}
+          uses: sarisia/actions-status-discord@v1
+          with:
+            webhook: ${{ secrets.DISCORD_WEBHOOK }}
+            title: 'Failure Details'
+            description: |
+              Repository: ${{ github.repository }}
+              Branch: ${{ github.ref_name }}
+              Commit: ${{ github.sha }}
+              Message: ${{ github.event.head_commit.message }}
+              Author: ${{ github.event.head_commit.author.name }}
+              Workflow: ${{ github.workflow }}
+              Job: ${{ github.job }}
+
   tag_release:
     if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
     needs: [simple_deployment_pipeline]
@@ -57,37 +85,3 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         DEFAULT_BUMP: patch
-  
-  discord_notification:
-    if: ${{ always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
-    needs: [simple_deployment_pipeline]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Send a message to Discord
-        uses: sarisia/actions-status-discord@v1
-        if: ${{ needs.simple_deployment_pipeline.result == 'success' }}
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          nodetail: true
-          notimestamp: true
-          title: 'Deployment Details'
-          description: |
-            Commit: ${{ github.sha }}
-            Message: ${{ github.event.head_commit.message }}
-            Author: ${{ github.event.head_commit.author.name }}
-
-      - name: Send a message to Discord
-        uses: sarisia/actions-status-discord@v1
-        if: ${{ needs.simple_deployment_pipeline.result == 'failure' }}
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: 'Failure Details'
-          description: |
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.head_ref }}
-            Commit: ${{ github.sha }}
-            Message: ${{ github.event.head_commit.message }}
-            Author: ${{ github.event.head_commit.author.name }}
-            Workflow: ${{ github.workflow }}
-            Job: ${{ github.job }}
