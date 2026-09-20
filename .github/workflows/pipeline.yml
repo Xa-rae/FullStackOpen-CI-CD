@@ -59,15 +59,18 @@ jobs:
         DEFAULT_BUMP: patch
   
   discord_notification:
-    if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
+    if: ${{ always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
     needs: [simple_deployment_pipeline]
     runs-on: ubuntu-latest
+
     steps:
       - name: Send a message to Discord
         uses: sarisia/actions-status-discord@v1
-        if: ${{ success() }}
+        if: ${{ needs.simple_deployment_pipeline.result == 'success' }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          nodetail: true
+          notimestamp: true
           title: 'Deployment Details'
           description: |
             Commit: ${{ github.sha }}
@@ -76,7 +79,7 @@ jobs:
 
       - name: Send a message to Discord
         uses: sarisia/actions-status-discord@v1
-        if: ${{ failure() }}
+        if: ${{ needs.simple_deployment_pipeline.result == 'failure' }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           title: 'Failure Details'
