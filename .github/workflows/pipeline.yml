@@ -53,7 +53,38 @@ jobs:
         fetch-depth: 0
     
     - name: Bump version and push tag
-      uses: anothrNick/github-tag-action@1.75.0
+      uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         DEFAULT_BUMP: patch
+  
+  discord_notification:
+    if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
+    needs: [simple_deployment_pipeline]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send a message to Discord
+        uses: sarisia/actions-status-discord@v1
+        if: ${{ success() }}
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: 'Deployment Details'
+          description: |
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            Author: ${{ github.event.head_commit.author.name }}
+
+      - name: Send a message to Discord
+        uses: sarisia/actions-status-discord@v1
+        if: ${{ failure() }}
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: 'Failure Details'
+          description: |
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.head_ref }}
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            Author: ${{ github.event.head_commit.author.name }}
+            Workflow: ${{ github.workflow }}
+            Job: ${{ github.job }}
