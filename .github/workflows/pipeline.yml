@@ -39,33 +39,35 @@ jobs:
           if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
           run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
 
-        - name: Send a message to Discord
-          if: ${{ always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') && success() }}
+        - name: Send a success message to Discord
+          if: ${{ always() && github.event_name == 'push' && !contains(github.event.head_commit.message || '', '#skip') && success() }}
           uses: sarisia/actions-status-discord@v1
           with:
             webhook: ${{ secrets.DISCORD_WEBHOOK }}
             nodetail: true
             notimestamp: true
+            content: '✅ Deployment successful'
             title: 'Deployment Details'
             description: |
               Commit: ${{ github.sha }}
               Message: ${{ github.event.head_commit.message }}
               Author: ${{ github.event.head_commit.author.name }}
 
-        - name: Send a message to Discord
+        - name: Send a failure message to Discord
           if: ${{ always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') && failure() }}
           uses: sarisia/actions-status-discord@v1
           with:
             webhook: ${{ secrets.DISCORD_WEBHOOK }}
             nodetail: true
             notimestamp: true
+            content: '❌ Build failed'
             title: 'Failure Details'
             description: |
               Repository: ${{ github.repository }}
               Branch: ${{ github.ref_name }}
               Commit: ${{ github.sha }}
-              Message: ${{ github.event.head_commit.message }}
-              Author: ${{ github.event.head_commit.author.name }}
+              Message: ${{ github.event.head_commit.message || 'N/A' }}
+              Author: ${{ github.event.head_commit.author.name || github.actor }}
               Workflow: ${{ github.workflow }}
               Job: ${{ github.job }}
               
