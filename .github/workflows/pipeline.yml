@@ -70,7 +70,7 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           nodetail: true
           notimestamp: true
-          content: '✅ Deployment successful'
+          content: '✅ **Deployment Successful!** A new version deployed to production.'
           title: 'Deployment Details'
           description: |
             **Commit**: ${{ github.sha }}
@@ -84,7 +84,7 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           nodetail: true
           notimestamp: true
-          content: '❌ Build failed'
+          content: '❌ **Build Failed!** The pipeline encountered an error.'
           title: 'Failure Details'
           description: |
             **Repository:** ${{ github.repository }}
