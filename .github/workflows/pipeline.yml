@@ -57,44 +57,34 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         DEFAULT_BUMP: patch
-
+  
   discord_notification:
-    needs: simple_deployment_pipeline
-    if: ${{ always() && !contains(github.event.head_commit.message, '#skip') }}
+    if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
+    needs: [simple_deployment_pipeline]
     runs-on: ubuntu-latest
-
     steps:
-      - name: Send success message to Discord
-        if: ${{ needs.simple_deployment_pipeline.result == 'success' }}
+      - name: Send a message to Discord
         uses: sarisia/actions-status-discord@v1
+        if: ${{ success() }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          nodetail: true
-          notimestamp: true
-          content: '✅ **Deployment successful!** A new version deployed to production.'
           title: 'Deployment Details'
           description: |
-            **Commit:** ${{ github.sha }}
-            **Message:** ${{ github.event.head_commit.message }}
-            **Author:** ${{ github.event.head_commit.author.name }}
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            Author: ${{ github.event.head_commit.author.name }}
 
-      - name: Send failure message to Discord
-        if: ${{ needs.simple_deployment_pipeline.result == 'failure' }}
+      - name: Send a message to Discord
         uses: sarisia/actions-status-discord@v1
+        if: ${{ failure() }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          nodetail: true
-          notimestamp: true
-          content: '❌ **Deployment failed!** The pipeline encountered an error.'
           title: 'Failure Details'
           description: |
-            **Repository:** ${{ github.repository }}
-            **Branch:** ${{ github.ref_name }}
-            **Commit:** ${{ github.sha }}
-            **Message:** ${{ github.event.head_commit.message || 'N/A' }}
-            **Author:** ${{ github.event.head_commit.author.name || github.actor }}
-            **Workflow:** ${{ github.workflow }}
-            **Job:** ${{ github.job }}
-            
-            [View Commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-            [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.head_ref }}
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
+            Author: ${{ github.event.head_commit.author.name }}
+            Workflow: ${{ github.workflow }}
+            Job: ${{ github.job }}
