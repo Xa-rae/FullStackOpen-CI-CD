@@ -60,7 +60,7 @@ jobs:
   
   discord_notification:
     needs: simple_deployment_pipeline
-    if: ${{ always() && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ always() && github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
     runs-on: ubuntu-latest
     steps:
       - name: Send success message to Discord
@@ -74,8 +74,8 @@ jobs:
           title: 'Deployment Details'
           description: |
             **Commit**: ${{ github.sha }}
-            **Message**: ${{ github.event.head_commit.message }}
-            **Author**: ${{ github.event.head_commit.author.name }}
+            **Message:** ${{ github.event.pull_request.title }}
+            **Author:** ${{ github.event.pull_request.user.login }}
 
       - name: Send failure message to Discord
         if: ${{ needs.simple_deployment_pipeline.result == 'failure' }}
