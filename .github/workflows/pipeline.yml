@@ -44,7 +44,7 @@ jobs:
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
 
   notify_success:
-    if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ always() && github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
@@ -63,7 +63,7 @@ jobs:
             **Author:** ${{ github.event.pull_request.user.login || github.actor }}
 
   notify_failure:
-    if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ always() && github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
@@ -91,7 +91,7 @@ jobs:
 
   tag_release:
     if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
-    needs: [deploy]
+    needs: [notify_success]
     runs-on: ubuntu-latest
     permissions:
       contents: write
