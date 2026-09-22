@@ -34,37 +34,22 @@ jobs:
 
         - name: Run Playwright tests
           run: npm run test:e2e
-          
-        - name: Trigger deployment
-          if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
-          run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
 
-  tag_release:
-    if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
+  deploy:
+    if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
     needs: [simple_deployment_pipeline]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-    - uses: actions/checkout@v6
-      with:
-        ref: ${{ github.event.pull_request.merge_commit_sha }}
-        fetch-depth: 0
-    
-    - name: Bump version and push tag
-      uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DEFAULT_BUMP: patch
-  
-  discord_notification:
-    needs: simple_deployment_pipeline
-    if: ${{ always() && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
+      - name: Trigger deployment
+        run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+  notify_success:
+    if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
+    needs: [deploy]
     runs-on: ubuntu-latest
     steps:
       - name: Send success message to Discord
-        if: ${{ needs.simple_deployment_pipeline.result == 'success' }}
+        if: ${{ needs.deploy.result == 'success' }}
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -77,8 +62,13 @@ jobs:
             **Message:** ${{ github.event.pull_request.title || github.event.head_commit.message || 'N/A' }}
             **Author:** ${{ github.event.pull_request.user.login || github.actor }}
 
+  notify_failure:
+    if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
       - name: Send failure message to Discord
-        if: ${{ needs.simple_deployment_pipeline.result == 'failure' }}
+        if: ${{ needs.deploy.result == 'failure' }}
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -97,3 +87,23 @@ jobs:
 
             [View Commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
             [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+    
+
+  tag_release:
+    if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '#skip') }}
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.merge_commit_sha }}
+        fetch-depth: 0
+    
+    - name: Bump version and push tag
+      uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DEFAULT_BUMP: patch
