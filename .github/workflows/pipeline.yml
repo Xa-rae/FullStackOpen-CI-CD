@@ -44,7 +44,7 @@ jobs:
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
 
   notify_success:
-    if: ${{ always() && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ success() && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
@@ -63,7 +63,7 @@ jobs:
             **Author:** ${{ github.event.pull_request.user.login || github.actor }}
 
   notify_failure:
-    if: ${{ always() && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ failure() && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
