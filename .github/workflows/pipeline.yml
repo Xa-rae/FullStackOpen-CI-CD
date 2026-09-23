@@ -9,7 +9,7 @@ on:
     types: [opened, synchronize, closed]
 
 jobs:
-  simple_deployment_pipeline:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
         - uses: actions/checkout@v6
@@ -36,15 +36,15 @@ jobs:
           run: npm run test:e2e
 
   deploy:
-    if: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
-    needs: [simple_deployment_pipeline]
+    if: ${{ success() && github.event_name == 'push' && !contains(github.event.head_commit.message, '#skip') }}
+    needs: [build_and_test]
     runs-on: ubuntu-latest
     steps:
       - name: Trigger deployment
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
 
   notify_success:
-    if: ${{ needs.deploy.result == 'success' && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ success() && github.event_name == 'push' && !contains(github.event.pull_request.title, '#skip') }}
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +62,7 @@ jobs:
             **Author:** ${{ github.event.pull_request.user.login || github.actor }}
 
   notify_failure:
-    if: ${{ needs.deploy.result == 'failure' && github.event_name == 'pull_request' && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ failure() && github.event_name == 'push' && !contains(github.event.pull_request.title, '#skip') }}
     needs: [deploy]
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +88,7 @@ jobs:
     
 
   tag_release:
-    if: ${{ github.event_name == 'push' && !contains(github.event.pull_request.title, '#skip') }}
+    if: ${{ success() && github.event_name == 'push' && !contains(github.event.pull_request.title, '#skip') }}
     needs: [notify_success]
     runs-on: ubuntu-latest
     permissions:
