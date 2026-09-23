@@ -3,7 +3,8 @@ name: Periodic Hello
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '30 12 * * *'
+      timezone: Europe/Helsinki
 
 jobs:
   healthcheck:
