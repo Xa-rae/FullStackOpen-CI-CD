@@ -89,7 +89,7 @@ jobs:
 
   tag_release:
     if: ${{ success() && github.event_name == 'push' && !contains(github.event.pull_request.title, '#skip') }}
-    needs: [notify_success]
+    needs: [deploy]
     runs-on: ubuntu-latest
     permissions:
       contents: write
