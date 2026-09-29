@@ -97,7 +97,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
       with:
-        ref: ${{ github.event.pull_request.merge_commit_sha }}
+        ref: ${{ github.head_ref || github.ref }}
         fetch-depth: 0
     
     - name: Bump version and push tag
